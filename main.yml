@@ -1,0 +1,109 @@
+---
+- name: Build a VM for compiling plan based scheduler linux kernel
+  hosts: all
+  become: true
+
+  tasks:
+    - name: install build dependencies
+      apt:
+        name: "{{ packages }}"
+        state: latest
+
+    - name: create source folder
+      file:
+        path: /home/vagrant/kernel_src
+        state: directory
+        mode: '0755'
+        owner: vagrant
+
+    - name: create folder for lkm
+      file:
+        path: /home/vagrant/mods
+        state: directory
+        mode: '0755'
+        owner: vagrant
+
+    - name: add custom ssh-key
+      ansible.posix.authorized_key:
+          user: vagrant
+          state: present
+          key: "{{ lookup('file', '/home/ml/.ssh/vm.pub') }}"
+
+
+    - name: change default shell to zsh
+      user:
+          name: vagrant
+          shell: /usr/bin/zsh
+
+    - name: copy zshrc to remote
+      copy:
+          src: zshrc
+          dest: /home/vagrant/.zshrc
+          owner: vagrant
+          group: vagrant
+
+    - name: mount nfs share from host
+      ansible.posix.mount:
+          src: 192.168.1.1:/home/ml/hdd/repos
+          path: /home/vagrant/kernel_src_nfs
+          opts: rw,sync,hard,intr
+          state: mounted
+          fstype: nfs
+
+    - name: set timezone to Asia/Tokyo
+      timezone:
+          name: Europe/Berlin
+
+    # https://docs.ansible.com/ansible/2.3/parted_module.html
+    - name: create partiton for new hdd
+      parted:
+          device: /dev/sdb
+          number: 1
+          state: present
+
+    - name: make a filesystem for second hdd
+      filesystem:
+          fstype: ext4
+          dev: /dev/sdb1
+
+    - name: mount filesystem
+      ansible.posix.mount:
+          path: /home/vagrant/kernel_src_local
+          src: /dev/sdb1
+          fstype: ext4
+          state: mounted
+
+    - name: change ownership of kernel_src_local
+      ansible.builtin.file:
+          path: /home/vagrant/kernel_src_local
+          state: directory
+          recurse: yes
+          owner: vagrant
+          group: vagrant
+
+  vars:
+    packages:
+      - git
+      - fakeroot
+      - build-essential
+      - ncurses-dev
+      - xz-utils
+      - libssl-dev
+      - bc
+      - flex
+      - libelf-dev
+      - bison
+      - vim
+      - util-linux
+      - lvm2
+      - e2fsprogs
+      - parted
+      - htop
+      - liblz4-tool
+      - curl
+      - zsh
+      - nfs-common
+
+# cp -v /boot/config-$(uname -r) .config
+
+# compilen: get repo, git checkout pb, copy that to vm, cd src/pbs/ && cp -v /boot/config-$(uname -r) .config, change distcc to gcc in Makefile, make menuconfig, make, sudo make modules_install, sudo make install,
