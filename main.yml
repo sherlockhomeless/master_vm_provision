@@ -1,20 +1,14 @@
 ---
+
 - name: Build a VM for compiling plan based scheduler linux kernel
   hosts: all
   become: true
-
+  vars_files: ansible_vars.yml
   tasks:
     - name: install build dependencies
       apt:
         name: "{{ packages }}"
         state: latest
-
-    - name: create source folder
-      file:
-        path: /home/vagrant/kernel_src
-        state: directory
-        mode: '0755'
-        owner: vagrant
 
     - name: create folder for lkm
       file:
@@ -29,7 +23,6 @@
           state: present
           key: "{{ lookup('file', '/home/ml/.ssh/vm.pub') }}"
 
-
     - name: change default shell to zsh
       user:
           name: vagrant
@@ -42,15 +35,23 @@
           owner: vagrant
           group: vagrant
 
-    - name: mount nfs share from host
-      ansible.posix.mount:
-          src: 192.168.1.1:/home/ml/hdd/repos
-          path: /home/vagrant/kernel_src_nfs
-          opts: rw,sync,hard,intr
-          state: mounted
-          fstype: nfs
 
-    - name: set timezone to Asia/Tokyo
+    - name: copy github ssh-key to remote
+      copy:
+          src: /home/ml/.ssh/github
+          dest: /home/vagrant/.ssh
+          owner: vagrant
+          group: vagrant
+          mode: '0111'
+
+    - name: copy ssh-config for github
+      copy:
+          src: ssh_config
+          dest: /home/vagrant/.ssh/config
+          owner: vagrant
+          group: vagrant
+
+    - name: set timezone to Europe/Berlin
       timezone:
           name: Europe/Berlin
 
@@ -68,41 +69,62 @@
 
     - name: mount filesystem
       ansible.posix.mount:
-          path: /home/vagrant/kernel_src_local
+          path: /home/vagrant/kernel_src
           src: /dev/sdb1
           fstype: ext4
           state: mounted
 
     - name: change ownership of kernel_src_local
       ansible.builtin.file:
-          path: /home/vagrant/kernel_src_local
+          path: /home/vagrant/kernel_src
           state: directory
           recurse: yes
           owner: vagrant
           group: vagrant
 
-  vars:
-    packages:
-      - git
-      - fakeroot
-      - build-essential
-      - ncurses-dev
-      - xz-utils
-      - libssl-dev
-      - bc
-      - flex
-      - libelf-dev
-      - bison
-      - vim
-      - util-linux
-      - lvm2
-      - e2fsprogs
-      - parted
-      - htop
-      - liblz4-tool
-      - curl
-      - zsh
-      - nfs-common
+
+    - name: adding grub options to boot from last booted kernel
+      blockinfile:
+          path: /etc/default/grub
+          block: |
+            GRUB_SAVEDEFAULT=true
+            GRUB_DEFAULT=saved
+          backup: yes
+
+    - name: updates grub after current changes
+      command: update-grub
+      become: yes
+
+    - name: add export for nfs
+      ansible.builtin.lineinfile:
+          line: "/home/vagrant/kernel_src 192.168.1.2(rw,sync,no_subtree_check)"
+          path: /etc/exports
+          create: yes
+      become: yes
+
+    - name: copy tmux to remote
+      copy:
+          src: start_tmux_vm_sesh.sh
+          dest: /home/vagrant/go_tmux.sh
+          owner: vagrant
+          group: vagrant
+          mode: u+rwx
+
+    - name: copy universal header files to source folder on remote
+      copy:
+          src: "{{ item }}"
+          dest: /home/vagrant/kernel_src_local/master_thesis_linux/kernel/sched
+          owner: vagrant
+          group: vagrant
+          force: yes
+      with_items:
+           - /home/ml/Dropbox/Master-Arbeit/code/unified_header/prediction_failure_config.h
+           - /home/ml/Dropbox/Master-Arbeit/code/unified_header/pbs_entities.h
+
+
+
+           #- name: install oh-my-zsh
+           # shell: /bin/bash -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 # cp -v /boot/config-$(uname -r) .config
 

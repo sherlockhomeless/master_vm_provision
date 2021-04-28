@@ -1,0 +1,5 @@
+host github.com
+    HostName github.com
+    User sherlockhomeless
+    IdentityFile ~/.ssh/github
+    PreferredAuthentications publickey

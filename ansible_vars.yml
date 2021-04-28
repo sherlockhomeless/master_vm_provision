@@ -1,0 +1,26 @@
+---
+packages:
+   - git
+   - fakeroot
+   - build-essential
+   - ncurses-dev
+   - xz-utils
+   - libssl-dev
+   - bc
+   - flex
+   - libelf-dev
+   - bison
+   - vim
+   - util-linux
+   - lvm2
+   - e2fsprogs
+   - parted
+   - htop
+   - liblz4-tool
+   - curl
+   - zsh
+   - nfs-common
+   - tmux
+   - python3
+   - nfs-kernel-server
+pc_type: "{{ lookup('env', 'PC_TYPE')}}"
