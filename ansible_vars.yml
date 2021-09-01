@@ -23,4 +23,5 @@ packages:
    - tmux
    - python3
    - nfs-kernel-server
+   - linux-tools-3.16
 pc_type: "{{ lookup('env', 'PC_TYPE')}}"

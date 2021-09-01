@@ -10,13 +10,6 @@
         name: "{{ packages }}"
         state: latest
 
-    - name: create folder for lkm
-      file:
-        path: /home/vagrant/mods
-        state: directory
-        mode: '0755'
-        owner: vagrant
-
     - name: add custom ssh-key
       ansible.posix.authorized_key:
           user: vagrant
@@ -82,6 +75,13 @@
           owner: vagrant
           group: vagrant
 
+    - name: create folder for plans
+      file:
+        path: /home/vagrant/kernel_src/plans
+        state: directory
+        mode: '0755'
+        owner: vagrant
+
 
     - name: adding grub options to boot from last booted kernel
       blockinfile:
@@ -113,13 +113,13 @@
     - name: copy universal header files to source folder on remote
       copy:
           src: "{{ item }}"
-          dest: /home/vagrant/kernel_src_local/master_thesis_linux/kernel/sched
+          dest: /home/vagrant/kernel_src/master_thesis_linux/kernel/sched
           owner: vagrant
           group: vagrant
           force: yes
       with_items:
-           - /home/ml/Dropbox/Master-Arbeit/code/unified_header/prediction_failure_config.h
-           - /home/ml/Dropbox/Master-Arbeit/code/unified_header/pbs_entities.h
+           - /home/ml/Dropbox/Master-Arbeit/code/level2/config.h
+           - /home/ml/Dropbox/Master-Arbeit/code/level2/pbs_entities.h
 
 
 

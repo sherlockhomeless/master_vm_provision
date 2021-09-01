@@ -24,7 +24,7 @@ alias t="cd ~/lkm1_in/src_test"
 alias clean="~/lkm1_in/clean"
 alias m="less"
 alias ins="sudo kernel_src_local/pbs_plan_copy/write_plan/w /home/vagrant/kernel_src_local plan.log"
-alias ksyms="cat /proc/kallsysm"
+alias ksyms="cat /proc/kallsyms"
 
 # my shit
 alias sync_src="rsync -u -v --progress -r "
